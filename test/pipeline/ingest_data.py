@@ -3,97 +3,48 @@
 
 import pandas as pd
 from sqlalchemy import create_engine
-from tqdm.auto import tqdm
+import click
 
-dtype = {
-    "VendorID": "Int64",
-    "passenger_count": "Int64",
-    "trip_distance": "float64",
-    "RatecodeID": "Int64",
-    "store_and_fwd_flag": "string",
-    "PULocationID": "Int64",
-    "DOLocationID": "Int64",
-    "payment_type": "Int64",
-    "fare_amount": "float64",
-    "extra": "float64",
-    "mta_tax": "float64",
-    "tip_amount": "float64",
-    "tolls_amount": "float64",
-    "improvement_surcharge": "float64",
-    "total_amount": "float64",
-    "congestion_surcharge": "float64"
-}
+def ingest_zones(engine):
+    print("Downloading zone lookup data...")
+    z_url = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/misc/taxi_zone_lookup.csv"
+    df_zones = pd.read_csv(z_url)
+    
+    print("Ingesting zones to Postgres...")
+    df_zones.to_sql(name='zones', con=engine, if_exists='replace')
+    print("Zones ingestion complete!")
 
-parse_dates = [
-    "tpep_pickup_datetime",
-    "tpep_dropoff_datetime"
-]
+def ingest_data(url: str, engine, target_table: str):
+    print(f"Downloading data from {url}...")
+    # Parquet jest wydajny, więc wczytujemy całość naraz (dla 1 miesiąca)
+    df = pd.read_parquet(url)
+    
+    print(f"Ingesting data to table {target_table}...")
+    # Tworzymy tabelę i wstawiamy dane
+    df.to_sql(name=target_table, con=engine, if_exists="replace")
+    print(f"Done ingesting {len(df)} rows to {target_table}")
 
-
-def ingest_data(
-        url: str,
-        engine,
-        target_table: str,
-        chunksize: int = 100000,
-) -> pd.DataFrame:
-    df_iter = pd.read_csv(
-        url,
-        dtype=dtype,
-        parse_dates=parse_dates,
-        iterator=True,
-        chunksize=chunksize
-    )
-
-    first_chunk = next(df_iter)
-
-    first_chunk.head(0).to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="replace"
-    )
-
-    print(f"Table {target_table} created")
-
-    first_chunk.to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="append"
-    )
-
-    print(f"Inserted first chunk: {len(first_chunk)}")
-
-    for df_chunk in tqdm(df_iter):
-        df_chunk.to_sql(
-            name=target_table,
-            con=engine,
-            if_exists="append"
-        )
-        print(f"Inserted chunk: {len(df_chunk)}")
-
-    print(f'done ingesting to {target_table}')
-
-def main():
-    pg_user = 'root'
-    pg_pass = 'root'
-    pg_host = 'localhost'
-    pg_port = '5432'
-    pg_db = 'ny_taxi'
-    year = 2021
-    month = 1
-    chunksize = 100000
-    target_table = 'yellow_taxi_data'
-
+@click.command()
+@click.option('--pg_user', default='postgres', help='PostgreSQL username')
+@click.option('--pg_pass', default='postgres', help='PostgreSQL password')
+@click.option('--pg_host', default='postgres', help='PostgreSQL host')
+@click.option('--pg_port', default='5432', help='PostgreSQL port')
+@click.option('--pg_db', default='ny_taxi', help='PostgreSQL database name')
+@click.option('--year', default=2025, type=int, help='Year of the data')
+@click.option('--month', default=11, type=int, help='Month of the data')
+@click.option('--target_table', default='green_taxi_2025_11', help='Target table name')
+def main(pg_user, pg_pass, pg_host, pg_port, pg_db, year, month, target_table):
+    
     engine = create_engine(f'postgresql://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}')
-    url_prefix = 'https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow'
 
-    url = f'{url_prefix}/yellow_tripdata_{year:04d}-{month:02d}.csv.gz'
+    # Nowy URL do plików Parquet dla Green Taxi
+    url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_{year:04d}-{month:02d}.parquet'
 
-    ingest_data(
-        url=url,
-        engine=engine,
-        target_table=target_table,
-        chunksize=chunksize
-    )
+    # 1. Ładowanie danych Green Taxi
+    ingest_data(url=url, engine=engine, target_table=target_table)
+
+    # 2. Ładowanie stref
+    ingest_zones(engine)
 
 if __name__ == '__main__':
     main()
