@@ -15,8 +15,7 @@ The goal of this assignment was to manage and orchestrate an ETL pipeline for th
 ## 🖼️ Documentation & Screenshots
 
 ### 🗺️ Pipeline Topology
-Visualization of the data flow architecture.
-![Topology](Module_2/images/Modul_2_1.png)
+![Topology](images/Modul_2_1.png) 
 
 ### ⚙️ Docker & Environment Setup
 Configuration for Kestra with Gemini AI support enabled.
@@ -28,7 +27,7 @@ Centralized configuration for GCP project settings and API keys.
 
 ### 🚥 Execution History & Backfill Status
 Confirmation of successful pipeline runs for historical data processing.
-![Execution Status](Module_2/images/Modul%202.5.png)
+![Execution Status](Zoomcamp-2026/Module_2/images/Modul_2.6.png)
 
 ## 📝 Quiz Results Summary
 
