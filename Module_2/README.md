@@ -1,62 +1,44 @@
 
-# Data Engineering Zoomcamp 2026 - Homework Module 1
+# 📊 NYC Taxi Data Pipeline - Module 2 Homework
 
-## Question 1 & 2
-* **Question 1**: Answer is `25.3` (verified with `pip --version`)
-* **Question 2**: Hostname and port: `db:5432`
+This repository contains my solution for the **Data Engineering Zoomcamp 2026 - Module 2**, focusing on Workflow Orchestration with **Kestra**.
 
-## SQL Queries (Questions 3-6)
+The goal of this assignment was to manage and orchestrate an ETL pipeline for the NYC Taxi dataset (Yellow and Green) using Google Cloud Platform and Kestra's advanced features like backfilling and scheduling.
 
-### Question 3: Counting short trips
-```sql
-SELECT COUNT(*) 
-FROM green_taxi_2025_11
-WHERE lpep_pickup_datetime >= '2025-11-01' 
-  AND lpep_pickup_datetime < '2025-12-01'
-  AND trip_distance <= 1; 
-``` 
-### Question 4: Longest trip distance
-```SQL
-SELECT 
-    DATE(lpep_pickup_datetime) AS pickup_day,
-    MAX(trip_distance) AS max_dist
-FROM green_taxi_2025_11
-WHERE trip_distance < 100
-GROUP BY pickup_day
-ORDER BY max_dist DESC
-LIMIT 1; 
-``` 
-Question 5: Largest total_amount
-```SQL
-SELECT 
-    z."Zone",
-    SUM(g.total_amount) AS total_sum
-FROM green_taxi_2025_11 g
-JOIN zones z ON g."PULocationID" = z."LocationID"
-WHERE DATE(g.lpep_pickup_datetime) = '2025-11-18'
-GROUP BY z."Zone"
-ORDER BY total_sum DESC
-LIMIT 1;
-``` 
-Question 6: Largest tip
-```SQL
-SELECT 
-    zdo."Zone" AS dropoff_zone,
-    MAX(g.tip_amount) AS max_tip
-FROM green_taxi_2025_11 g
-JOIN zones zpu ON g."PULocationID" = zpu."LocationID"
-JOIN zones zdo ON g."DOLocationID" = zdo."LocationID"
-WHERE zpu."Zone" = 'East Harlem North'
-GROUP BY dropoff_zone
-ORDER BY max_tip DESC
-LIMIT 1; 
-```
+## 🚀 Key Implementation Details
 
-## Question 7. Terraform Workflow 
-I successfully initialized and applied the infrastructure. 
+* **Workflow Orchestration**: Built robust Kestra flows to automate data extraction, transformation, and loading (ETL).
+* **Infrastructure as Code (IaC)**: Configured the local environment using **Docker Compose**, including a Kestra instance with **Gemini AI Copilot** integration.
+* **Secure Variable Management**: Utilized Kestra's **KV Store** to securely manage GCP project IDs, dataset locations, and credentials.
+* **Data Backfill**: Performed a full backfill for the year 2021 (Jan-Jul) for both taxi services, ensuring data consistency across multiple months.
 
-**Terminal Output for `terraform apply`:**
-```text
-google_bigquery_dataset.demo_dataset: Creating...
-google_storage_bucket.demo-bucket: Creating...
-Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+## 🖼️ Documentation & Screenshots
+
+### 🗺️ Pipeline Topology
+Visualization of the data flow architecture.
+![Topology](Module_2/images/Modul_2_1.png)
+
+### ⚙️ Docker & Environment Setup
+Configuration for Kestra with Gemini AI support enabled.
+Module_2/images/Modul%202.2.png
+
+### 🔐 Variable Management (KV Store)
+Centralized configuration for GCP project settings and API keys.
+![KV Store Configuration](Module_2/images/Modul%202.4.png)
+
+### 🚥 Execution History & Backfill Status
+Confirmation of successful pipeline runs for historical data processing.
+![Execution Status](Module_2/images/Modul%202.5.png)
+
+## 📝 Quiz Results Summary
+
+Based on the pipeline executions and BigQuery analysis, here are the findings for the homework assignment:
+
+1. **Yellow Taxi (Dec 2020) Size**: 128.3 MiB.
+
+2. **Rendered File Name**: `green_tripdata_2020-04.csv`.
+3. **Yellow Taxi 2020 Row Count**: 24,648,499.
+4. **Green Taxi 2020 Row Count**: 1,734,051.
+5. **Yellow Taxi March 2021 Row Count**: 1,925,152.
+6. **Timezone Configuration**: Used `America/New_York` for accurate scheduling.
+
