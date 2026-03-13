@@ -19,7 +19,7 @@ This repository contains the solution for the **Batch Processing** module of the
 | **Q1** | **Spark Version** | `3.x.x` (Check via `spark.version`) |
 | **Q2** | **Average Partition Size (Parquet)** | `~25 MB` |
 | **Q3** | **Taxi trips on October 15th** | `62,610` |
-| **Q4** | **Longest trip (Hours)** | `631.35 Hours` |
+| **Q4** | **Longest trip (Hours)** | `134.6 Hours` |
 | **Q5** | **Spark User Interface Port** | `4040` |
 | **Q6** | **Least frequent pickup location zone** | `Jamaica Bay` |
 
@@ -33,3 +33,17 @@ df = spark.read \
     .csv('yellow_tripdata_2019-10.csv')
 
 df.repartition(6).write.parquet('data/pq/yellow/2019/10/')
+## 💻 Logic for Question 4 (Longest Trip)
+To calculate the longest trip duration in hours, the following PySpark logic was used:
+
+```python
+from pyspark.sql import functions as F
+
+# Calculating duration in hours
+df_with_duration = df.withColumn(
+    'duration_hrs', 
+    (F.unix_timestamp('tpep_dropoff_datetime') - F.unix_timestamp('tpep_pickup_datetime')) / 3600
+)
+
+# Finding the maximum value
+df_with_duration.select(F.max('duration_hrs')).show()
